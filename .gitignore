@@ -1,3 +1,6 @@
 **/__pycache__/**
 *.wav
 audio/*
+.venv
+*.zip
+.idea
