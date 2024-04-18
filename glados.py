@@ -1,28 +1,29 @@
 import torch
-import numpy as np
 from utils.tools import prepare_text
 from scipy.io.wavfile import write
 import time
 import tempfile
 import subprocess
 from pydub import AudioSegment
-from pydub.playback import play
 from nltk import download
 from nltk.tokenize import sent_tokenize
 from sys import modules as mod
+import logging
+
 try:
     import winsound
 except ImportError:
     from subprocess import call
-print("Initializing TTS Engine...")
+logging.info("Initializing TTS Engine...")
 
 kwargs = {
-    'stdout':subprocess.PIPE,
-    'stderr':subprocess.PIPE,
-    'stdin':subprocess.PIPE
+    'stdout': subprocess.PIPE,
+    'stderr': subprocess.PIPE,
+    'stdin': subprocess.PIPE
 }
 
-class tts_runner:
+
+class TTSRunner:
     def __init__(self, use_p1: bool=False, log: bool=False):
         self.log = log
         if use_p1:
@@ -54,14 +55,14 @@ class tts_runner:
             old_time = time.time()
             tts_output = self.glados.generate_jit(x, self.emb, alpha)
             if self.log:
-                print("Forward Tacotron took " + str((time.time() - old_time) * 1000) + "ms")
+                logging.info("Forward Tacotron took " + str((time.time() - old_time) * 1000) + "ms")
 
             # Use HiFiGAN as vocoder to make output sound like GLaDOS
             old_time = time.time()
             mel = tts_output['mel_post'].to(self.device)
             audio = self.vocoder(mel)
             if self.log:
-                print("HiFiGAN took " + str((time.time() - old_time) * 1000) + "ms")
+                logging.info("HiFiGAN took " + str((time.time() - old_time) * 1000) + "ms")
 
             # Normalize audio to fit in wav-file
             audio = audio.squeeze()
@@ -85,7 +86,6 @@ class tts_runner:
                     subprocess.Popen(["aplay", name], **kwargs)
                 except FileNotFoundError:
                     subprocess.Popen(["pw-play", name], **kwargs)
-
 
     def speak(self, text, alpha: float=1.0, save: bool=False, delay: float=0.1):
         download('punkt',quiet=self.log)
@@ -126,8 +126,10 @@ class tts_runner:
         if time_left >= 0:
             time.sleep(time_left + delay)
 
+
 if __name__ == "__main__":
-    glados = tts_runner(False, True)
+    logging.basicConfig(level=logging.INFO)
+    glados = TTSRunner(False, True)
     while True:
         text = input("Input: ")
         if len(text) > 0:

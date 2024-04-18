@@ -4,3 +4,4 @@ audio/*
 .venv
 *.zip
 .idea
+models
