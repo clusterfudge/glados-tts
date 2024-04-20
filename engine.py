@@ -2,6 +2,7 @@ import sys
 import os
 import io
 from hashlib import sha256
+import gzip
 sys.path.insert(0, os.getcwd() + '/glados_tts')
 from glados import TTSRunner
 import logging
@@ -17,16 +18,25 @@ def cache_filename(utterance, root):
 
 def cache(utterance, audio, root=os.path.join(os.getcwd(), 'cache')):
     cache_file = cache_filename(utterance, root)
-    with open(cache_file, 'wb') as f:
+    with gzip.GzipFile(cache_file, 'wb') as f:
         audio.seek(0)
         f.write(audio.read())
+
+
+def is_gz_file(filepath):
+    with open(filepath, 'rb') as test_f:
+        return test_f.read(2) == b'\x1f\x8b'
 
 
 def from_cache(utterance, root=os.path.join(os.getcwd(), 'cache')):
     cache_file = cache_filename(utterance, root)
     if os.path.exists(cache_file):
-        with open(cache_file, 'rb') as f:
-            return f.read()
+        if is_gz_file(cache_file):
+            with gzip.GzipFile(cache_file, 'rb') as f:
+                return f.read()
+        else:
+            with open(cache_file, 'rb') as f:
+                return f.read()
     return None
 
 
